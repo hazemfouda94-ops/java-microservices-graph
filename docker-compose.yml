@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  analyzer:
+    build:
+      context: ./analyzer
+      dockerfile: Dockerfile
+    volumes:
+      - ./sample-repos:/app/sample-repos
+    networks:
+      - microservices-network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - microservices-network
+
+  visualizer:
+    build:
+      context: ./visualizer
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    networks:
+      - microservices-network
+
+networks:
+  microservices-network:
+    driver: bridge

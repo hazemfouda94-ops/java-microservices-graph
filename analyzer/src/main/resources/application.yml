@@ -1,0 +1,17 @@
+logging:
+  level:
+    root: INFO
+    com.analysis: DEBUG
+
+server:
+  port: 8080
+
+database:
+  url: jdbc:mysql://localhost:3306/microservices
+  username: user
+  password: password
+
+analysis:
+  outputFormat: json
+  includeDependencies: true
+  maxDepth: 3
