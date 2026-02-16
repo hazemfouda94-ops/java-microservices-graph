@@ -43,6 +43,7 @@ type AnalysisResults = {
     };
     nodes: GraphNode[];
     edges: GraphEdge[];
+    plantUml: string;
 };
 
 type ParsedClass = {
@@ -296,7 +297,8 @@ export class GraphModel {
                 flows: flowCount
             },
             nodes: Array.from(nodes.values()),
-            edges
+            edges,
+            plantUml: this.buildPlantUml(Array.from(nodes.values()), edges)
         };
 
         return this.lastResults;
@@ -304,6 +306,13 @@ export class GraphModel {
 
     getResults(): AnalysisResults | null {
         return this.lastResults;
+    }
+
+    getPlantUml(): string {
+        if (!this.lastResults) {
+            return '@startuml\ntitle No analysis results yet\n@enduml';
+        }
+        return this.lastResults.plantUml;
     }
 
     private async collectJavaFiles(root: string): Promise<string[]> {
@@ -646,5 +655,76 @@ export class GraphModel {
             'do',
             'case'
         ]).has(name);
+    }
+
+    private buildPlantUml(nodes: GraphNode[], edges: GraphEdge[]): string {
+        const lines: string[] = [];
+        lines.push('@startuml');
+        lines.push('skinparam shadowing false');
+        lines.push('left to right direction');
+        lines.push('hide empty members');
+        lines.push('title Java Call Flow');
+
+        for (const node of nodes) {
+            const alias = this.nodeAlias(node.id);
+            const label = this.escapeLabel(node.label);
+            const stereotype = this.stereotypeForNode(node.type);
+            lines.push(`class "${label}" as ${alias} <<${stereotype}>>`);
+        }
+
+        for (const edge of edges) {
+            const source = this.nodeAlias(edge.source);
+            const target = this.nodeAlias(edge.target);
+            const label = this.edgeLabel(edge.type);
+            lines.push(`${source} --> ${target} : ${label}`);
+        }
+
+        lines.push('@enduml');
+        return lines.join('\n');
+    }
+
+    private nodeAlias(id: string): string {
+        return `N_${id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+    }
+
+    private edgeLabel(type: EdgeType): string {
+        switch (type) {
+            case 'contains':
+                return 'contains';
+            case 'calls':
+                return 'calls';
+            case 'depends_on':
+                return 'depends_on';
+            case 'http':
+                return 'http';
+            default:
+                return 'flow';
+        }
+    }
+
+    private stereotypeForNode(type: NodeType): string {
+        switch (type) {
+            case 'controller':
+                return 'Controller';
+            case 'service':
+                return 'Service';
+            case 'repository':
+                return 'Repository';
+            case 'endpoint':
+                return 'Endpoint';
+            case 'method':
+                return 'Method';
+            case 'external':
+                return 'External';
+            case 'component':
+                return 'Component';
+            case 'class':
+            default:
+                return 'Class';
+        }
+    }
+
+    private escapeLabel(label: string): string {
+        return label.replace(/"/g, "'");
     }
 }

@@ -45,4 +45,14 @@ export class GraphService {
 
         return null;
     }
+
+    getPlantUml(): string {
+        const model = this.graphModel as AnyModel;
+        const fn = model['getPlantUml'];
+        if (typeof fn === 'function') {
+            return (fn as AnyFn).call(this.graphModel) as string;
+        }
+
+        return '@startuml\ntitle PlantUML is not available for current model\n@enduml';
+    }
 }

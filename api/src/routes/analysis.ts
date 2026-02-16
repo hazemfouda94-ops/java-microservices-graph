@@ -44,4 +44,14 @@ export const setRoutes = (app: Express) => {
             res.status(500).json({ error: message });
         }
     });
+
+    app.get('/analysis/plantuml', (_req: Request, res: Response) => {
+        try {
+            const plantUml = graphService.getPlantUml();
+            res.type('text/plain').send(plantUml);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            res.status(500).json({ error: message });
+        }
+    });
 };
