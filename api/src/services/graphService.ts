@@ -1,63 +1,48 @@
 import { GraphModel } from '../models/GraphModel';
 
+type AnyFn = (...args: unknown[]) => unknown;
+type AnyModel = GraphModel & Record<string, unknown>;
+
 export class GraphService {
-    private graphModel: GraphModel;
+    constructor(private readonly graphModel: GraphModel) {}
 
-    constructor(graphModel: GraphModel) {
-        this.graphModel = graphModel;
-    }
-
-    public getNodes() {
-        return this.graphModel.getNodes();
-    }
-
-    public getEdges() {
-        return this.graphModel.getEdges();
-    }
-
-    public getDependencies(serviceName: string) {
-        return this.graphModel.getDependencies(serviceName);
-    }
-
-    public addNode(node: any) {
-        this.graphModel.addNode(node);
-    }
-
-    public addEdge(edge: any) {
-        this.graphModel.addEdge(edge);
-    }
-
-    async triggerAnalysis(): Promise<unknown> {
-        const self: any = this as any;
-        if (typeof self.analyze === 'function') {
-            return await self.analyze();
+    async triggerAnalysis(microservicePath?: string) {
+        const inputPath = microservicePath || process.env.MICROSERVICE_PATH;
+        if (!inputPath) {
+            throw new Error('microservicePath is required');
         }
-        if (typeof self.runAnalysis === 'function') {
-            return await self.runAnalysis();
+
+        const model = this.graphModel as AnyModel;
+
+        // Preferred explicit method name.
+        const analyzeMicroservice = model['analyzeMicroservice'];
+        if (typeof analyzeMicroservice === 'function') {
+            return await (analyzeMicroservice as AnyFn).call(this.graphModel, inputPath);
         }
-        if (typeof self.graphModel?.triggerAnalysis === 'function') {
-            return await self.graphModel.triggerAnalysis();
+
+        // Backward-compatible fallbacks for existing model implementations.
+        const fallbacks = ['triggerAnalysis', 'analyze', 'runAnalysis'] as const;
+        for (const methodName of fallbacks) {
+            const fn = model[methodName];
+            if (typeof fn === 'function') {
+                return await (fn as AnyFn).call(this.graphModel, inputPath);
+            }
         }
-        if (typeof self.graphModel?.analyze === 'function') {
-            return await self.graphModel.analyze();
-        }
+
         throw new Error('No analysis method is available on GraphService/GraphModel');
     }
 
-    async getResults(): Promise<unknown> {
-        const self: any = this as any;
-        if (typeof self.fetchResults === 'function') {
-            return await self.fetchResults();
+    async getResults() {
+        const model = this.graphModel as AnyModel;
+
+        const candidates = ['getResults', 'getAnalysisResults', 'results'] as const;
+        for (const methodName of candidates) {
+            const fn = model[methodName];
+            if (typeof fn === 'function') {
+                return await (fn as AnyFn).call(this.graphModel);
+            }
         }
-        if (typeof self.getGraph === 'function') {
-            return await self.getGraph();
-        }
-        if (typeof self.graphModel?.getResults === 'function') {
-            return await self.graphModel.getResults();
-        }
-        if (typeof self.graphModel?.getGraph === 'function') {
-            return await self.graphModel.getGraph();
-        }
-        throw new Error('No results method is available on GraphService/GraphModel');
+
+        return null;
     }
 }

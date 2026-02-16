@@ -82,3 +82,18 @@ This project provides a framework for statically analyzing multiple Java microse
 ## Contribution Guidelines
 
 Contributions are welcome! Please submit a pull request or open an issue for any enhancements or bug fixes.
+# Java Microservices Graph
+
+This project visualizes dependencies between Java microservices.
+
+## API
+
+Start the API:
+
+```bash
+cd api
+npm install
+npm run start
+```
+
+API base URL: `http://localhost:3000`
